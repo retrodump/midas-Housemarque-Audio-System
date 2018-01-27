@@ -1,0 +1,1444 @@
+Index: contrib/GCC-Win32/libmidas.txt
+===================================================================
+RCS file: /cvs/src/midas/contrib/GCC-Win32/libmidas.txt,v
+retrieving revision 1.1.2.1
+retrieving revision 1.1.2.2
+diff -u -r1.1.2.1 -r1.1.2.2
+--- a/contrib/GCC-Win32/libmidas.txt	10 Feb 1998 19:11:33 -0000	1.1.2.1
++++ b/contrib/GCC-Win32/libmidas.txt	7 Mar 1998 21:19:15 -0000	1.1.2.2
+@@ -6,15 +6,23 @@
+ dlltool -U --output-lib libmidas.a --dllname midas11.dll --def midasdll.def
+ 
+ * Midasdll.h must be changed.
+-The following should be added to midasdll.h:
++After the following lines in the header:
++    #if defined(__linux__) || defined(__UNIX__) || defined(__DJGPP__)
++          #define _FUNC(x) x
++          #define MIDAS_CALL
++you must add this:
+     #if defined(__MINGW32__) || defined(__CYGWIN32__)
+        #define _FUNC(x) __attribute__ ((stdcall)) x
+        #define MIDAS_CALL
+ 
+ * Ready to go!
++Test the import library by compiling the test.c file.
++Use the following command:
++gcc test.c -o test.exe -L. -lmidas
+ 
+-I haven't tried MIDAS with Cygwin32, but it should work the
+-same way as with Mingw32. The binary included (libmidas.a)
+-is made for for Mingw32 and midas11.dll (1.1.1).
++Run test
+ 
+-Anders Norlander (anorland@hem2.passagen.se)
+\ No newline at end of file
++The library (libmidas.a) supplied can be used with Mingw32-GCC 2.8
++and Cygwin32 (beta 18).
++
++Anders Norlander (anorland@hem2.passagen.se)
+Index: samples/cheaptrk/instedit.cc
+===================================================================
+RCS file: /cvs/src/midas/samples/cheaptrk/instedit.cc,v
+retrieving revision 1.1.2.1
+retrieving revision 1.1.2.2
+diff -u -r1.1.2.1 -r1.1.2.2
+--- a/samples/cheaptrk/instedit.cc	18 Nov 1997 19:37:19 -0000	1.1.2.1
++++ b/samples/cheaptrk/instedit.cc	10 Apr 1999 09:43:17 -0000	1.1.2.2
+@@ -2,7 +2,7 @@
+  *
+  * CheapTracker instrument editor
+  *
+- * $Id: instedit.cc,v 1.1.2.1 1997/11/18 19:37:19 pekangas Exp $
++ * $Id: instedit.cc,v 1.1.2.2 1999/04/10 09:43:17 pekangas Exp $
+  *
+  * Copyright 1997 Petteri Kangaslampi
+  *
+@@ -259,7 +259,8 @@
+             {
+                 handled = 1;
+                 note = (octave << 4) + note;
+-                if ( !MTRKplayInstrumentNote(playHandle, 0, pos, note) )
++                if ( !MTRKplayInstrumentNote(playHandle, 0, pos, note,
++                                             16) )
+                     MIDASerror();
+             }
+             break;
+@@ -302,6 +303,9 @@
+ 
+ /*
+  * $Log: instedit.cc,v $
++ * Revision 1.1.2.2  1999/04/10 09:43:17  pekangas
++ * Small fix (made when? not sure, just cleaning up and committing)
++ *
+  * Revision 1.1.2.1  1997/11/18 19:37:19  pekangas
+  * Added keys for testing new sample modification functions
+  *
+Index: src/midas/it.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/it.h,v
+retrieving revision 1.5
+retrieving revision 1.5.2.1
+diff -u -r1.5 -r1.5.2.1
+--- a/src/midas/it.h	31 Jul 1997 10:56:42 -0000	1.5
++++ b/src/midas/it.h	5 Apr 2001 09:15:57 -0000	1.5.2.1
+@@ -2,7 +2,7 @@
+  *
+  * Impulse Tracker Module format structures
+  *
+- * $Id: it.h,v 1.5 1997/07/31 10:56:42 pekangas Exp $
++ * $Id: it.h,v 1.5.2.1 2001/04/05 09:15:57 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque, Inc
+  *
+@@ -45,10 +45,10 @@
+ 
+ typedef struct
+ {
+-    U16         pattDataSize;           /* pattern size */
+-    U16         numRows;                /* rows in pattern */
+-    U32         reserved;
+-    U8          data[EMPTYARRAY];       /* packed pattern data */
++    U16         pattDataSize PACKED;    /* pattern size */
++    U16         numRows PACKED;         /* rows in pattern */
++    U32         reserved PACKED;
++    U8          data[EMPTYARRAY] PACKED; /* packed pattern data */
+ } itPattern;
+ 
+ 
+@@ -109,32 +109,32 @@
+ 
+ typedef struct
+ {
+-    char        signature[4];           /* "IMPM" */
+-    char        name[26];               /* module name */
+-    U16         reserved;
+-    U16         songLength;             /* number of orders */
+-    U16         numInsts;               /* number of instruments */
+-    U16         numSamples;             /* number of samples */
+-    U16         numPatts;               /* number of patterns */
+-    U16         trackerVersion;         /* version of the tracker this file
++    char        signature[4] PACKED;    /* "IMPM" */
++    char        name[26] PACKED;        /* module name */
++    U16         reserved PACKED;
++    U16         songLength PACKED;      /* number of orders */
++    U16         numInsts PACKED;        /* number of instruments */
++    U16         numSamples PACKED;      /* number of samples */
++    U16         numPatts PACKED;        /* number of patterns */
++    U16         trackerVersion PACKED;  /* version of the tracker this file
+ 					   was created with */
+-    U16         compatibleVersion;      /* version this module is compatible
+-					   with */
+-    U16         flags;                  /* see itFlags enum above */
+-    U16         special;                /* song attachment see itFlags above */
+-    U8          globalVolume;           /* 0-128 */
+-    U8          mixingVolume;           /* 0-128 */
+-    U8          speed;
+-    U8          tempo;
+-    U8          panSeparation;          /* 0-128, 128 = max. separation */
+-    U8          zero;
+-    U16         msgLength;
+-    U32         msgOffset;
+-    U32         reserved2;
+-    U8          chanPan[64];
+-    U8          chanVol[64];
+-    U8          orders[EMPTYARRAY];
+-} itHeader;
++    U16         compatibleVersion PACKED; /* version this module is compatible
++					     with */
++    U16         flags PACKED;           /* see itFlags enum above */
++    U16         special PACKED;         /* song attachment see itFlags above */
++    U8          globalVolume PACKED;    /* 0-128 */
++    U8          mixingVolume PACKED;    /* 0-128 */
++    U8          speed PACKED;
++    U8          tempo PACKED;
++    U8          panSeparation PACKED;   /* 0-128, 128 = max. separation */
++    U8          zero PACKED;
++    U16         msgLength PACKED;
++    U32         msgOffset PACKED;
++    U32         reserved2 PACKED;
++    U8          chanPan[64] PACKED;
++    U8          chanVol[64] PACKED;
++    U8          orders[EMPTYARRAY] PACKED;
++} itHeader PACKED;
+ 
+ /*
+                              Impulse Header Layout
+@@ -237,20 +237,20 @@
+ 
+ typedef struct
+ {
+-    U8          vol;
+-    U16         tick;
+-}itEnvNode;
++    U8          vol PACKED;
++    U16         tick PACKED;
++}itEnvNode PACKED;
+ 
+ typedef struct
+ {
+-    U8          flags;
+-    U8          num;
+-    U8          loopStart;
+-    U8          loopEnd;
+-    U8          susLoopStart;
+-    U8          susLoopEnd;
+-    itEnvNode   nodes[25];
+-} itEnvelope;
++    U8          flags PACKED;
++    U8          num PACKED;
++    U8          loopStart PACKED;
++    U8          loopEnd PACKED;
++    U8          susLoopStart PACKED;
++    U8          susLoopEnd PACKED;
++    itEnvNode   nodes[25] PACKED;
++} itEnvelope PACKED;
+ 
+ 
+ /*                              Envelope layout
+@@ -293,27 +293,27 @@
+ 
+ typedef struct
+ {
+-    char        signature[4];           /* "IMPI" */
+-    char        DOSfileName[12];
+-    U8          zero;
+-    U8          flags;
+-    U8          volLoopStart;
+-    U8          volLoopEnd;
+-    U8          susLoopStart;
+-    U8          susLoopEnd;
+-    U16         reserved;
+-    U16         fadeOut;
+-    U8          NNA;
+-    U8          DNC;
+-    U16         trackerVersion;
+-    U8          numSamples;
+-    U8          reserved2;
+-    char        instName[26];
+-    char        reserved3[6];
+-    U8          noteSampleTable[240];
+-    U8          volEnvelope[200];
+-    U8          nodePoints[2*25];
+-} itOldInstHeader;
++    char        signature[4] PACKED;    /* "IMPI" */
++    char        DOSfileName[12] PACKED;
++    U8          zero PACKED;
++    U8          flags PACKED;
++    U8          volLoopStart PACKED;
++    U8          volLoopEnd PACKED;
++    U8          susLoopStart PACKED;
++    U8          susLoopEnd PACKED;
++    U16         reserved PACKED;
++    U16         fadeOut PACKED;
++    U8          NNA PACKED;
++    U8          DNC PACKED;
++    U16         trackerVersion PACKED;
++    U8          numSamples PACKED;
++    U8          reserved2 PACKED;
++    char        instName[26] PACKED;
++    char        reserved3[6] PACKED;
++    U8          noteSampleTable[240] PACKED;
++    U8          volEnvelope[200] PACKED;
++    U8          nodePoints[2*25] PACKED;
++} itOldInstHeader PACKED;
+ 
+ 
+ /*
+@@ -389,29 +389,29 @@
+ 
+ typedef struct
+ {
+-    char        signature[4];           /* "IMPI" */
+-    char        DOSfileName[12];
+-    U8          zero;
+-    U8          NNA;
+-    U8          DCT;
+-    U8          DCA;
+-    U16         fadeOut;
+-    U8          PPS;
+-    U8          PPC;
+-    U8          GbV;
+-    U8          DfP;
+-    U8          RV;
+-    U8          RP;
+-    U16         trackerVersion;
+-    U8          numSamples;
+-    U8          reserved2;
+-    char        instName[26];
+-    char        reserved3[6];
+-    U8          noteSampleTable[240];
+-    itEnvelope  volEnvelope;
+-    itEnvelope  panEnvelope;
+-    itEnvelope  pitchEnvelope;
+-} itInstHeader;
++    char        signature[4] PACKED;    /* "IMPI" */
++    char        DOSfileName[12] PACKED;
++    U8          zero PACKED;
++    U8          NNA PACKED;
++    U8          DCT PACKED;
++    U8          DCA PACKED;
++    U16         fadeOut PACKED;
++    U8          PPS PACKED;
++    U8          PPC PACKED;
++    U8          GbV PACKED;
++    U8          DfP PACKED;
++    U8          RV PACKED;
++    U8          RP PACKED;
++    U16         trackerVersion PACKED;
++    U8          numSamples PACKED;
++    U8          reserved2 PACKED;
++    char        instName[26] PACKED;
++    char        reserved3[6] PACKED;
++    U8          noteSampleTable[240] PACKED;
++    itEnvelope  volEnvelope PACKED;
++    itEnvelope  panEnvelope PACKED;
++    itEnvelope  pitchEnvelope PACKED;
++} itInstHeader PACKED;
+ 
+ /*
+                            Impulse Instrument Format
+@@ -483,26 +483,26 @@
+ 
+ typedef struct
+ {
+-    char        signature[4];           /* "IMPS" */
+-    char        DOSfileName[12];
+-    U8          zero;
+-    U8          GvL;
+-    U8          flags;
+-    U8          volume;
+-    char        sampleName[26];
+-    U16         convert;
+-    U32         length;
+-    U32         loopStart;
+-    U32         loopEnd;
+-    U32         C5speed;
+-    U32         susLoopStart;
+-    U32         susLoopEnd;
+-    U32         samplePointer;
+-    U8          vibSpeed;
+-    U8          vibDepth;
+-    U8          vibRate;
+-    U8          vibType;
+-} itSampleHeader;
++    char        signature[4] PACKED;    /* "IMPS" */
++    char        DOSfileName[12] PACKED;
++    U8          zero PACKED;
++    U8          GvL PACKED;
++    U8          flags PACKED;
++    U8          volume PACKED;
++    char        sampleName[26] PACKED;
++    U16         convert PACKED;
++    U32         length PACKED;
++    U32         loopStart PACKED;
++    U32         loopEnd PACKED;
++    U32         C5speed PACKED;
++    U32         susLoopStart PACKED;
++    U32         susLoopEnd PACKED;
++    U32         samplePointer PACKED;
++    U8          vibSpeed PACKED;
++    U8          vibDepth PACKED;
++    U8          vibRate PACKED;
++    U8          vibType PACKED;
++} itSampleHeader PACKED;
+ 
+ /*
+                              Impulse Sample Format
+@@ -698,6 +698,9 @@
+ 
+ /*
+  * $Log: it.h,v $
++ * Revision 1.5.2.1  2001/04/05 09:15:57  pekangas
++ * Backported Jarno's GCC structure packing fix from trunk to the 1.1 branch
++ *
+  * Revision 1.5  1997/07/31 10:56:42  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+Index: src/midas/lang.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/lang.h,v
+retrieving revision 1.20
+retrieving revision 1.20.2.1
+diff -u -r1.20 -r1.20.2.1
+--- a/src/midas/lang.h	31 Jul 1997 10:56:42 -0000	1.20
++++ b/src/midas/lang.h	5 Apr 2001 09:15:57 -0000	1.20.2.1
+@@ -2,7 +2,7 @@
+  *
+  * Destination language dependent macros and conditional compilation
+  *
+- * $Id: lang.h,v 1.20 1997/07/31 10:56:42 pekangas Exp $
++ * $Id: lang.h,v 1.20.2.1 2001/04/05 09:15:57 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -29,6 +29,7 @@
+     #define __FLATMODE__
+     #define EMPTYARRAY
+     #define __LITTLEENDIAN__
++    #define PACKED
+ 
+     #ifdef __cplusplus
+         /* Throw a couple of Watcom C++ warnings out of our way to level 9
+@@ -50,6 +51,7 @@
+     #define __FLATMODE__
+     #define __WIN32__
+     #define __LITTLEENDIAN__
++    #define PACKED
+ 
+     /* Disable warning about 0-sized arrays in structures: */
+     #pragma warning(disable:4200)
+@@ -69,6 +71,7 @@
+     #define NOTIMER
+     #define M_HAVE_THREADS
+     #define __LITTLEENDIAN__
++    #define PACKED __attribute__((packed))
+ 
+     #define EMPTYARRAY 0
+ #else
+@@ -84,7 +87,8 @@
+     #define __FLATMODE__
+     #define NOTIMER
+     #undef  M_HAVE_THREADS
+-    #define __BIBENDIAN__
++    #define __BIGENDIAN__
++    #define PACKED __attribute__((packed))
+ 
+     #define EMPTYARRAY 0
+ #else
+@@ -98,6 +102,7 @@
+     #define __DOS__
+     #define __DPMI__
+     #define __LITTLEENDIAN__
++    #define PACKED __attribute__((packed))
+ 
+     #define EMPTYARRAY 0
+ #else
+@@ -166,6 +171,9 @@
+ 
+ /*
+  * $Log: lang.h,v $
++ * Revision 1.20.2.1  2001/04/05 09:15:57  pekangas
++ * Backported Jarno's GCC structure packing fix from trunk to the 1.1 branch
++ *
+  * Revision 1.20  1997/07/31 10:56:42  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+Index: src/midas/loadmod.c
+===================================================================
+RCS file: /cvs/src/midas/src/midas/loadmod.c,v
+retrieving revision 1.14.2.1
+retrieving revision 1.14.2.2
+diff -u -r1.14.2.1 -r1.14.2.2
+--- a/src/midas/loadmod.c	1 Feb 1998 16:44:20 -0000	1.14.2.1
++++ b/src/midas/loadmod.c	5 Apr 2001 09:15:57 -0000	1.14.2.2
+@@ -2,7 +2,7 @@
+  *
+  * Generic Module Player Protracker Module loader
+  *
+- * $Id: loadmod.c,v 1.14.2.1 1998/02/01 16:44:20 pekangas Exp $
++ * $Id: loadmod.c,v 1.14.2.2 2001/04/05 09:15:57 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -26,7 +26,7 @@
+ #endif
+ #include "mutils.h"
+ 
+-RCSID(const char *modload_rcsid = "$Id: loadmod.c,v 1.14.2.1 1998/02/01 16:44:20 pekangas Exp $";)
++RCSID(const char *modload_rcsid = "$Id: loadmod.c,v 1.14.2.2 2001/04/05 09:15:57 pekangas Exp $";)
+ 
+ 
+ /* Macro for endianness-swap. DANGEROUS - references the argument x
+@@ -46,13 +46,13 @@
+ 
+ typedef struct
+ {
+-    char        iname[22];              /* instrument name */
+-    ushort      slength;                /* sample length */
+-    uchar       finetune;               /* sample finetune value */
+-    uchar       volume;                 /* sample default volume */
+-    ushort      loopStart;              /* sample loop start, in words */
+-    ushort      loopLength;             /* sample loop length, in words */
+-} modInstHdr;
++    char        iname[22] PACKED;       /* instrument name */
++    ushort      slength PACKED;         /* sample length */
++    uchar       finetune PACKED;        /* sample finetune value */
++    uchar       volume PACKED;          /* sample default volume */
++    ushort      loopStart PACKED;       /* sample loop start, in words */
++    ushort      loopLength PACKED;      /* sample loop length, in words */
++} modInstHdr PACKED;
+ 
+ 
+ 
+@@ -65,14 +65,14 @@
+ 
+ typedef struct
+ {
+-    char        songName[20];           /* song name */
+-    modInstHdr  instruments[31];        /* instrument headers */
+-    uchar       songLength;             /* song length */
+-    uchar       restart;                /* unused by Protracker, song restart
++    char        songName[20] PACKED;    /* song name */
++    modInstHdr  instruments[31] PACKED; /* instrument headers */
++    uchar       songLength PACKED;      /* song length */
++    uchar       restart PACKED;         /* unused by Protracker, song restart
+                                            position in some modules */
+-    uchar       songData[128];          /* pattern playing orders */
+-    char        sign[4];                /* module signature */
+-} modHeader;
++    uchar       songData[128] PACKED;   /* pattern playing orders */
++    char        sign[4] PACKED;         /* module signature */
++} modHeader PACKED;
+ 
+ 
+ 
+@@ -925,6 +925,9 @@
+ 
+ /*
+  * $Log: loadmod.c,v $
++ * Revision 1.14.2.2  2001/04/05 09:15:57  pekangas
++ * Backported Jarno's GCC structure packing fix from trunk to the 1.1 branch
++ *
+  * Revision 1.14.2.1  1998/02/01 16:44:20  pekangas
+  * Ignored 0-length loops
+  *
+Index: src/midas/loads3m.c
+===================================================================
+RCS file: /cvs/src/midas/src/midas/loads3m.c,v
+retrieving revision 1.21.2.1
+retrieving revision 1.21.2.2
+diff -u -r1.21.2.1 -r1.21.2.2
+--- a/src/midas/loads3m.c	7 Sep 1997 21:22:00 -0000	1.21.2.1
++++ b/src/midas/loads3m.c	5 Apr 2001 09:15:57 -0000	1.21.2.2
+@@ -2,7 +2,7 @@
+  *
+  * Generic Module Player Screamtracker 3 Module loader
+  *
+- * $Id: loads3m.c,v 1.21.2.1 1997/09/07 21:22:00 jpaana Exp $
++ * $Id: loads3m.c,v 1.21.2.2 2001/04/05 09:15:57 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -34,7 +34,7 @@
+ #endif
+ 
+ 
+-RCSID(const char *loads3m_rcsid = "$Id: loads3m.c,v 1.21.2.1 1997/09/07 21:22:00 jpaana Exp $";)
++RCSID(const char *loads3m_rcsid = "$Id: loads3m.c,v 1.21.2.2 2001/04/05 09:15:57 pekangas Exp $";)
+ 
+ 
+ //#define DEBUGMESSAGES
+@@ -104,14 +104,14 @@
+ 
+ typedef struct
+ {
+-    char	name[28];		/* song name */
+-    U8          num1A;                  /* 0x1A */
+-    U8          type;                   /* file type */
+-    U16         unused1;
+-    U16         songLength;             /* number of orders */
+-    U16         numInsts;               /* number of instruments */
+-    U16         numPatts;               /* number of patterns */
+-    U16         flags;
++    char	name[28] PACKED;	/* song name */
++    U8          num1A PACKED;           /* 0x1A */
++    U8          type PACKED;            /* file type */
++    U16         unused1 PACKED;
++    U16         songLength PACKED;      /* number of orders */
++    U16         numInsts PACKED;        /* number of instruments */
++    U16         numPatts PACKED;        /* number of patterns */
++    U16         flags PACKED;
+ 
+ /*
+     struct
+@@ -126,20 +126,20 @@
+         int     unused : 9;
+ 	} flags;
+ */
+-    U16         trackerVer;             /* tracker version */
+-    U16         formatVer;              /* file format version */
+-    char	SCRM[4];		/* "SCRM" */
+-    U8          masterVol;              /* master volume */
+-    U8          speed;                  /* initial speed */
+-    U8          tempo;                  /* initial tempo */
+-    U8          masterMult;             /* master multiplier (bits 0-3),stereo (bit 4) */
+-    U8          ultraClicks;            /* Ultraclick removal info */
+-    U8          panningMagic;           /* 0FCh if panning infos exist */
+-    U8          unused2[8];
+-    U16         special;                /* pointer to special custom data */
+-    U8          chanSettings[32];       /* channel settings */
++    U16         trackerVer PACKED;      /* tracker version */
++    U16         formatVer PACKED;       /* file format version */
++    char	SCRM[4] PACKED;		/* "SCRM" */
++    U8          masterVol PACKED;       /* master volume */
++    U8          speed PACKED;           /* initial speed */
++    U8          tempo PACKED;           /* initial tempo */
++    U8          masterMult PACKED;      /* master multiplier (bits 0-3),stereo (bit 4) */
++    U8          ultraClicks PACKED;     /* Ultraclick removal info */
++    U8          panningMagic PACKED;    /* 0FCh if panning infos exist */
++    U8          unused2[8] PACKED;
++    U16         special PACKED;         /* pointer to special custom data */
++    U8          chanSettings[32] PACKED; /* channel settings */
+ 
+-} s3mHeader;
++} s3mHeader PACKED;
+ 
+ 
+ /****************************************************************************\
+@@ -150,9 +150,9 @@
+ 
+ typedef struct
+ {
+-    U16         pattDataSize;           /* pattern data size */
+-    U8          data[EMPTYARRAY];       /* packed pattern data */
+-} s3mPattern;
++    U16         pattDataSize PACKED;    /* pattern data size */
++    U8          data[EMPTYARRAY] PACKED; /* packed pattern data */
++} s3mPattern PACKED;
+ 
+ 
+ /****************************************************************************\
+@@ -163,25 +163,25 @@
+ 
+ typedef struct
+ {
+-    U8          type;                   /* instrument type */
+-    char        dosName[12];            /* DOS filename (8+3) */
+-    char        zero;                   /* 0 */
+-    U16         samplePtr;              /* paragraph ptr to sample data */
+-    U32         length;                 /* sample length */
+-    U32         loopStart;              /* sample loop start */
+-    U32         loopEnd;                /* sample loop end */
+-    U8          volume;                 /* volume */
+-    U8          disk;                   /* instrument disk number */
+-    U8          pack;                   /* sample packing info (0 = raw,1 = DP30ADPCM1) */
+-    U8          flags;                  /* bit0 = loop, bit1 = stereo,bit2 = 16-bit */
+-    U32         c2Rate;                 /* C2 sampling rate */
+-    U32         unused;
+-    U16         gusPos;                 /* position in GUS memory / 32 */
+-    U16         int512;
+-    U32         intLastUsed;
+-    char        iname[28];              /* instrument name */
+-    char        SCRS[4];                /* "SCRS" if sample */
+-} s3mInstHdr;
++    U8          type PACKED;            /* instrument type */
++    char        dosName[12] PACKED;     /* DOS filename (8+3) */
++    char        zero PACKED;            /* 0 */
++    U16         samplePtr PACKED;       /* paragraph ptr to sample data */
++    U32         length PACKED;          /* sample length */
++    U32         loopStart PACKED;       /* sample loop start */
++    U32         loopEnd PACKED;         /* sample loop end */
++    U8          volume PACKED;          /* volume */
++    U8          disk PACKED;            /* instrument disk number */
++    U8          pack PACKED;            /* sample packing info (0 = raw,1 = DP30ADPCM1) */
++    U8          flags PACKED;           /* bit0 = loop, bit1 = stereo,bit2 = 16-bit */
++    U32         c2Rate PACKED;          /* C2 sampling rate */
++    U32         unused PACKED;
++    U16         gusPos PACKED;          /* position in GUS memory / 32 */
++    U16         int512 PACKED;
++    U32         intLastUsed PACKED;
++    char        iname[28] PACKED;       /* instrument name */
++    char        SCRS[4] PACKED;         /* "SCRS" if sample */
++} s3mInstHdr PACKED;
+ 
+ 
+ /* Conversion table from Screamtracker command number to GMP ones: */
+@@ -1241,6 +1241,9 @@
+ 
+ /*
+  * $Log: loads3m.c,v $
++ * Revision 1.21.2.2  2001/04/05 09:15:57  pekangas
++ * Backported Jarno's GCC structure packing fix from trunk to the 1.1 branch
++ *
+  * Revision 1.21.2.1  1997/09/07 21:22:00  jpaana
+  * Fixed to take all data into account when calculating number of channels
+  *
+Index: src/midas/midastrk.c
+===================================================================
+RCS file: /cvs/src/midas/src/midas/midastrk.c,v
+retrieving revision 1.5.2.3
+retrieving revision 1.5.2.4
+diff -u -r1.5.2.3 -r1.5.2.4
+--- a/src/midas/midastrk.c	1 Jan 1998 18:03:35 -0000	1.5.2.3
++++ b/src/midas/midastrk.c	22 Jul 1998 18:25:33 -0000	1.5.2.4
+@@ -2,7 +2,7 @@
+  *
+  * MIDAS tracker API
+  *
+- * $Id: midastrk.c,v 1.5.2.3 1998/01/01 18:03:35 pekangas Exp $
++ * $Id: midastrk.c,v 1.5.2.4 1998/07/22 18:25:33 pekangas Exp $
+  *
+  * Copyright 1997 Housemarque Inc.
+  *
+@@ -31,7 +31,7 @@
+ #include "midastrk.h"
+ 
+ 
+-RCSID(const char *midastrk_rcsid = "$Id: midastrk.c,v 1.5.2.3 1998/01/01 18:03:35 pekangas Exp $";)
++RCSID(const char *midastrk_rcsid = "$Id: midastrk.c,v 1.5.2.4 1998/07/22 18:25:33 pekangas Exp $";)
+ 
+ 
+ 
+@@ -364,7 +364,8 @@
+ /****************************************************************************\
+ *
+ * Function:     BOOL MTRKplayInstrumentNote(MIDASmodulePlayHandle playHandle,
+-*                   unsigned channel, unsigned instrument, unsigned note)
++*                   unsigned channel, unsigned instrument, unsigned note,
++*                   unsigned volume)
+ *
+ * Description:  Plays a note with a given instrument from a module
+ *
+@@ -372,6 +373,8 @@
+ *               unsigned channel        channel number
+ *               unsigned instrument     instrument number (0-based)
+ *               unsigned note           note to play (upper nybble octave)
++*               unsigned volume         volume to play with
++*                                       (MTRKvolumeDefault for default)
+ *
+ * Returns:      TRUE if successful, FALSE if not
+ *
+@@ -379,7 +382,7 @@
+ 
+ _FUNC(BOOL) MTRKplayInstrumentNote(MIDASmodulePlayHandle playHandle,
+                                    unsigned channel, unsigned instrument,
+-                                   unsigned note)
++                                   unsigned note, unsigned volume)
+ {
+     unsigned sample, xmNote;
+     ModulePlayHandle *h = mPlayHandles[playHandle-1];
+@@ -396,7 +399,8 @@
+     else
+         sample = inst->noteSamples[xmNote];
+ 
+-    return MTRKplaySampleNote(playHandle, channel, instrument, sample, note);
++    return MTRKplaySampleNote(playHandle, channel, instrument, sample, note,
++                              volume);
+ }
+ 
+ 
+@@ -406,7 +410,7 @@
+ *
+ * Function:     BOOL MTRKplaySampleNote(MIDASmodulePlayHandle playHandle,
+ *                   unsigned channel, unsigned instrument, unsigned sample,
+-*                   unsigned note)
++*                   unsigned note, unsigned volume)
+ *
+ * Description:  Plays a note with a given instrument from a module
+ *
+@@ -415,6 +419,8 @@
+ *               unsigned instrument     instrument number (0-based)
+ *               unsigned sample         sample number for the instrument
+ *               unsigned note           note to play (upper nybble octave)
++*               unsigned volume         volume to play with
++*                                       (MTRKvolumeDefault for default)
+ *
+ * Returns:      TRUE if successful, FALSE if not
+ *
+@@ -422,7 +428,8 @@
+ 
+ _FUNC(BOOL) MTRKplaySampleNote(MIDASmodulePlayHandle playHandle,
+                                unsigned channel, unsigned instrument,
+-                               unsigned sample, unsigned note)
++                               unsigned sample, unsigned note,
++                               unsigned volume)
+ {
+     int error;
+     ModulePlayHandle *h = mPlayHandles[playHandle-1];
+@@ -460,7 +467,10 @@
+     chan->sample = sample;
+ 
+     /* Set instrument volume as current channel volume: */
+-    gmpSetVolume(samp->volume);
++    if ( volume == MTRKvolumeDefault )
++        gmpSetVolume(samp->volume);
++    else
++        gmpSetVolume(volume);
+ 
+     /* Set instrument panning as current channel panning: */
+     gmpSetPanning(samp->panning);
+@@ -1121,6 +1131,9 @@
+ 
+ /*
+  * $Log: midastrk.c,v $
++ * Revision 1.5.2.4  1998/07/22 18:25:33  pekangas
++ * Added volumes to MTRKplaySampleNote and MTRKplayInstrumentNote
++ *
+  * Revision 1.5.2.3  1998/01/01 18:03:35  pekangas
+  * MTRKdecompressPattern() now ignores data on channels that don't
+  * really exist
+Index: src/midas/midastrk.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/midastrk.h,v
+retrieving revision 1.5.2.2
+retrieving revision 1.5.2.3
+diff -u -r1.5.2.2 -r1.5.2.3
+--- a/src/midas/midastrk.h	20 Nov 1997 20:43:03 -0000	1.5.2.2
++++ b/src/midas/midastrk.h	22 Jul 1998 18:25:35 -0000	1.5.2.3
+@@ -2,7 +2,7 @@
+  *
+  * MIDAS tracker API
+  *
+- * $Id: midastrk.h,v 1.5.2.2 1997/11/20 20:43:03 pekangas Exp $
++ * $Id: midastrk.h,v 1.5.2.3 1998/07/22 18:25:35 pekangas Exp $
+  *
+  * Copyright 1997 Housemarque Inc.
+  *
+@@ -152,6 +152,14 @@
+ 
+ 
+ 
++/* Volume constants: */
++enum MTRKvolumeConstants
++{
++    MTRKvolumeDefault = 0x50            /* sample/instrument default vol */
++};
++
++
++
+ /* The sample structure: */
+ typedef struct
+ {
+@@ -367,10 +375,11 @@
+ _FUNC(MIDASmodulePlayHandle) MTRKplayModuleInstruments(MTRKmodule *module);
+ _FUNC(BOOL)     MTRKplayInstrumentNote(MIDASmodulePlayHandle playHandle,
+                                        unsigned channel, unsigned instrument,
+-                                       unsigned note);
++                                       unsigned note, unsigned volume);
+ _FUNC(BOOL)     MTRKplaySampleNote(MIDASmodulePlayHandle playHandle,
+                                    unsigned channel, unsigned instrument,
+-                                   unsigned sample, unsigned note);
++                                   unsigned sample, unsigned note,
++                                   unsigned volume);
+ _FUNC(BOOL)     MTRKreleaseNote(MIDASmodulePlayHandle playHandle,
+                                 unsigned channel);
+ _FUNC(BOOL)     MTRKstopNote(MIDASmodulePlayHandle playHandle,
+@@ -411,6 +420,9 @@
+ 
+ /*
+  * $Log: midastrk.h,v $
++ * Revision 1.5.2.3  1998/07/22 18:25:35  pekangas
++ * Added volumes to MTRKplaySampleNote and MTRKplayInstrumentNote
++ *
+  * Revision 1.5.2.2  1997/11/20 20:43:03  pekangas
+  * Added speed and tempo functions
+  *
+Index: src/midas/midastrk.pas
+===================================================================
+RCS file: /cvs/src/midas/src/midas/midastrk.pas,v
+retrieving revision 1.3.2.1
+retrieving revision 1.3.2.3
+diff -u -r1.3.2.1 -r1.3.2.3
+--- a/src/midas/midastrk.pas	20 Nov 1997 21:09:59 -0000	1.3.2.1
++++ b/src/midas/midastrk.pas	22 Jul 1998 18:25:36 -0000	1.3.2.3
+@@ -2,7 +2,7 @@
+  *
+  * MIDAS tracker API, Delphi interface unit
+  *
+- * $Id: midastrk.pas,v 1.3.2.1 1997/11/20 21:09:59 pekangas Exp $
++ * $Id: midastrk.pas,v 1.3.2.3 1998/07/22 18:25:36 pekangas Exp $
+  *
+  * Copyright 1997 Housemarque Inc.
+  *
+@@ -83,15 +83,82 @@
+     MTRKloopUnidir = 1;                 { unidirectional loop }
+     MTRKloopBidir = 2;                  { bidirectional loop }
+ 
++    {* Volume constants: *}
++    MTRKvolumeDefault = $50;            { sample/instrument default vol }
++
++
++    { Command description strings: (from Khaled) }
++    MTRKCommandStrs : array[0..MTRKNumCommands-1] of string =
++    ( '[none]',
++      'arpeggio',
++      'period slide up',
++      'period slide down',
++      'tone portamento',
++      'vibrato',
++      'tone portamento + volume slide',
++      'vibrato + volume slide',
++      'tremolo',
++      'set panning (PT cmd 8)',
++      'set sample offset',
++      'volume slide',
++      'position jump',
++      'set volume',
++      'pattern break (to a row)',
++      'set speed',
++      'set tempo in BPM',
++      'fine period slide up',
++      'fine period slide down',
++      'pattern loop set/loop',
++      'set 16-point panning value',
++      'Protracker-style retrig note',
++      'fine volume slide up',
++      'fine volume slide down',
++      'note cut',
++      'note delay',
++      'pattern delay',
++      'set master volume',
++      'master volume slide',
++      'S3M retrig note',
++      'music sync. command',
++      'extra fine period slide up',
++      'extra fine period slide down',
++      'panning slide'
++    );
++
++    { Sample Types }
++    MTRKsmpNone = 0;        { no sample }
++    MTRKsmp8bitMono = 1;    { 8-bit mono unsigned sample }
++    MTRKsmp8bit = 1;        { for compatibility }
++    MTRKsmp16bitMono = 2;      { 16-bit mono signed sample }
++    MTRKsmp16bit = 2;       { for compatibility }
++    MTRKsmp8bitStereo = 3;  { 8-bit stereo unsigned sample }
++    MTRKsmp16bitStereo = 4;    { 16-bit stereo signed sample }
++
++    { GMPlayer playing modes }
++    MTRKgmpPT = 1;    { Protracker compatibility mode }
++    MTRKgmpST3 = 2;   { Scream Tracker 3 mode }
++    MTRKgmpFT2 = 3;   { Fast Tracker 2 mode }
++    MTRKgmpIT  = 4;   { IT mode }
++
++    { General constants }
++    MTRK_VOL_NONE = $50;
++    MTRK_NOTE_RELEASE = $FE;
++    MTRK_NOTE_NONE = $FF;
++    MTRK_INST_NONE = $FF;
++    MTRK_MAX_OCTAVE = 8;
++    MTRK_MAX_PAT_ROWS = 256;
++    MTRK_MAX_TRACKS = 32;
+ 
+ 
+ type
+     Pbyte = ^byte;
++    Pinteger = ^integer;
++    Pword = ^word;
+ 
+ 
+ { The sample structure: }
+ type MTRKsample =
+-    record
++    packed record
+         name : array[0..31] of char;    { sample name }
+         sdHandle : dword;               { Sound Device sample handle }
+         sample : Pbyte;                 { sample data pointer, NULL if sample
+@@ -123,11 +190,12 @@
+     { In tracker mode, the sample pointer is valid. }
+     end;
+     PMTRKsample = ^MTRKsample;
++    PPMTRKsample = ^PMTRKsample;
+ 
+ 
+ { Envelope point structure: }
+ type MTRKenvelopePoint =
+-    record
++    packed record
+         x : word;
+         y : smallint;
+     end;
+@@ -136,17 +204,17 @@
+ 
+ { Instrument envelope structure. }
+ type MTRKenvelope =
+-    record
++    packed record
+         numPoints : byte;               { number of points in envelope }
+-        sustain : smallint;             { sustain point number, -1 if no
++        sustain : shortint;             { sustain point number, -1 if no
+                                           sustain is used }
+-        loopStart : smallint;           { envelope loop start point number,
++        loopStart : shortint;           { envelope loop start point number,
+                                           -1 if no loop }
+-        loopEnd : smallint;             { envelope loop end point number, -1
++        loopEnd : shortint;             { envelope loop end point number, -1
+                                           if no loop }
+-        susLoopStart : smallint;        { sustain loop start point number, -1
++        susLoopStart : shortint;        { sustain loop start point number, -1
+                                           if no loop (IT) }
+-        susLoopEnd : smallint;          { sustain loop end point number, -1
++        susLoopEnd : shortint;          { sustain loop end point number, -1
+                                           if no loop (IT) }
+         points : array[0..24] of MTRKenvelopePoint;
+                                         { envelope points: a maximum of 25
+@@ -159,7 +227,7 @@
+ { The instrument structure. In tracker mode, with XMs, the module loader
+   always allocates space for 16 sample pointers for each instrument. }
+ type MTRKinstrument =
+-    record
++    packed record
+         name : array[0..31] of char;    { instrument name }
+         numSamples : dword;             { number of samples }
+         noteSamples : Pbyte;            { sample numbers for all keyboard
+@@ -200,12 +268,13 @@
+                                           mode. }
+     end;
+     PMTRKinstrument = ^MTRKinstrument;
++    PPMTRKinstrument = ^PMTRKinstrument;
+ 
+ 
+ 
+ { The pattern structure: }
+ type MTRKpattern =
+-    record
++    packed record
+         length : dword;                 { pattern size in bytes, INCLUDING
+                                           this header }
+         rows : dword;                   { number of rows in pattern }
+@@ -238,17 +307,28 @@
+        module.numChannels*sizeof(MTRKpatternDataEntry) + 1. *}
+     end;
+     PMTRKpattern = ^MTRKpattern;
++    PPMTRKpattern = ^PMTRKpattern;   
+ 
+ 
+ 
+ 
+ { Decompressed pattern data entry: }
+ type MTRKpatternDataEntry =
+-    record
++    packed record
+         compInfo, note, instrument, volume, command, infobyte : byte;
+     end;
+     PMTRMpatternDataEntry = ^MTRKpatternDataEntry;
+ 
++    { Format-specific playing information flags: }
++    MTRKplayFlagsRec = packed record
++        case integer of
++            0: (ptLimits: integer);       { ST3: Protracker limits }
++            1: (fastVolSlides: integer);  { ST3: Fast volume slides }
++            2: (extOctaves: integer);     { PT: Extended octaves needed }
++            3: (linFreqTable: integer);   { FT2: Linear frequency table used }
++            4: (instruments: integer);    { IT: instrument mode used }
++        end;
++
+ 
+ 
+ { The MIDAS module structure - MIDASmodule is really a pointer to this.
+@@ -256,24 +336,25 @@
+   structure pointers, 16384 sample pointers, 256 pattern pointers,
+   32 channels of panning positions and 256 song data entries. }
+ type MTRKmodule =
+-    record
++    packed record
+         name : array[0..31] of char;    { module name }
+         playMode : integer;             { module playing mode }
+         songLength : dword;             { song length }
+         restart : dword;                { song restart position }
+         numInsts : dword;               { number of instruments }
++        numSamples : dword;             { number of samples }       
+         numPatts : dword;               { number of patterns }
+         numChannels : byte;             { number of channels in module }
+         masterVolume : byte;            { initial master volume }
+         speed : byte;                   { initial speed }
+         tempo : byte;                   { initial BPM tempo }
+-        panning : ^integer;             { initial channel panning
++        panning : Pinteger;             { initial channel panning
+                                           positions }
+-        songData: ^word;                { song data - pattern playing
++        songData: Pword;                { song data - pattern playing
+                                           order }
+-        instruments : ^PMTRKinstrument; { instrument data }
+-        samples : ^PMTRKsample;         { sample data }        
+-        patterns : ^PMTRKpattern;       { pattern data }
++        instruments : PPMTRKinstrument; { instrument data }
++        samples : PPMTRKsample;         { sample data }        
++        patterns : PPMTRKpattern;       { pattern data }
+ 
+         playFlags : dword; {word? how to implement bitfields?}
+     (*struct  /* Format-specific playing information flags: */
+@@ -295,10 +376,11 @@
+ function MTRKplayModuleInstruments(module : PMTRKmodule) :
+     MIDASmodulePlayHandle; stdcall;
+ function MTRKplayInstrumentNote(playHandle : MIDASmodulePlayHandle;
+-    channel : dword; instrument : dword; note : dword) : boolean; stdcall;
+-function MTRKplaySampleNote(playHandle : MIDASmodulePlayHandle;
+-    channel : dword; instrument : dword; sample : dword; note : dword) :
++    channel : dword; instrument : dword; note : dword; volume : dword) :
+     boolean; stdcall;
++function MTRKplaySampleNote(playHandle : MIDASmodulePlayHandle;
++    channel : dword; instrument : dword; sample : dword; note : dword;
++    volume : dword) : boolean; stdcall;
+ function MTRKreleaseNote(playHandle : MIDASmodulePlayHandle; channel : dword) :
+     boolean; stdcall;
+ function MTRKstopNote(playHandle : MIDASmodulePlayHandle; channel : dword) :
+@@ -338,12 +420,13 @@
+     MIDASmodulePlayHandle;
+     stdcall; external 'mtrk11.dll' name '_MTRKplayModuleInstruments@4';
+ function MTRKplayInstrumentNote(playHandle : MIDASmodulePlayHandle;
+-    channel : dword; instrument : dword; note : dword) : boolean;
+-    stdcall; external 'mtrk11.dll' name '_MTRKplayInstrumentNote@16';
+-function MTRKplaySampleNote(playHandle : MIDASmodulePlayHandle;
+-    channel : dword; instrument : dword; sample : dword; note : dword) :
++    channel : dword; instrument : dword; note : dword; volume : dword) :
+     boolean;
+-    stdcall; external 'mtrk11.dll' name '_MTRKplaySampleNote@20';
++    stdcall; external 'mtrk11.dll' name '_MTRKplayInstrumentNote@20';
++function MTRKplaySampleNote(playHandle : MIDASmodulePlayHandle;
++    channel : dword; instrument : dword; sample : dword; note : dword;
++    volume : dword) : boolean;
++    stdcall; external 'mtrk11.dll' name '_MTRKplaySampleNote@24';
+ function MTRKreleaseNote(playHandle : MIDASmodulePlayHandle; channel : dword) :
+     boolean;
+     stdcall; external 'mtrk11.dll' name '_MTRKreleaseNote@8';
+@@ -364,7 +447,7 @@
+     stdcall; external 'mtrk11.dll' name '_MTRKremoveInstrument@12';
+ function MTRKremoveSample(module : PMTRKmodule; instrument, sample : dword;
+     playHandle : MIDASmodulePlayHandle) : boolean;
+-    stdcall; external 'mtrk11.dll' name '_MTRKremoveSample@14';
++    stdcall; external 'mtrk11.dll' name '_MTRKremoveSample@16';
+ function MTRKnewInstrument(module : PMTRKmodule; instrument : dword;
+     playHandle : MIDASmodulePlayHandle) : boolean;
+     stdcall; external 'mtrk11.dll' name '_MTRKnewInstrument@12';
+@@ -390,6 +473,12 @@
+ 
+ {*
+  * $Log: midastrk.pas,v $
++ * Revision 1.3.2.3  1998/07/22 18:25:36  pekangas
++ * Added volumes to MTRKplaySampleNote and MTRKplayInstrumentNote
++ *
++ * Revision 1.3.2.2  1998/03/13 17:30:52  pekangas
++ * Fixes and updates from Khaled
++ *
+  * Revision 1.3.2.1  1997/11/20 21:09:59  pekangas
+  * Brought up to date
+  *
+Index: src/midas/mpoll.c
+===================================================================
+RCS file: /cvs/src/midas/src/midas/mpoll.c,v
+retrieving revision 1.19
+retrieving revision 1.19.2.1
+diff -u -r1.19 -r1.19.2.1
+--- a/src/midas/mpoll.c	31 Jul 1997 10:56:52 -0000	1.19
++++ b/src/midas/mpoll.c	17 Mar 2004 18:58:04 -0000	1.19.2.1
+@@ -2,7 +2,7 @@
+  *
+  * Functions for polling MIDAS Digital Audio System in a thread
+  *
+- * $Id: mpoll.c,v 1.19 1997/07/31 10:56:52 pekangas Exp $
++ * $Id: mpoll.c,v 1.19.2.1 2004/03/17 18:58:04 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -26,7 +26,7 @@
+ #include <pthread.h>
+ #endif
+ 
+-RCSID(const char *mpoll_rcsid = "$Id: mpoll.c,v 1.19 1997/07/31 10:56:52 pekangas Exp $";)
++RCSID(const char *mpoll_rcsid = "$Id: mpoll.c,v 1.19.2.1 2004/03/17 18:58:04 pekangas Exp $";)
+ 
+ #ifdef __UNIX__
+     static pthread_t            pollThread;
+@@ -153,9 +153,12 @@
+     /* Start polling MIDAS in a thread: */
+ #ifdef __UNIX__
+     pthread_attr_init(&thrAttr);
+-    pthread_attr_setschedpolicy(&thrAttr, SCHED_RR);
+-    param.sched_priority = sched_get_priority_max(SCHED_RR);
+-    pthread_attr_setschedparam(&thrAttr, &param);
++    if ( geteuid() == 0 )
++    {
++        pthread_attr_setschedpolicy(&thrAttr, SCHED_RR);
++        param.sched_priority = sched_get_priority_max(SCHED_RR);
++        pthread_attr_setschedparam(&thrAttr, &param);
++    }
+     code = pthread_create(&pollThread, &thrAttr, PollerThread, NULL);
+     if ( code )
+         midasErrorExit("StartPlayThread: Couldn't create player thread!");
+@@ -274,6 +277,9 @@
+ 
+ /*
+  * $Log: mpoll.c,v $
++ * Revision 1.19.2.1  2004/03/17 18:58:04  pekangas
++ * Backported glibc 2.1 fix to the 1.1 branch
++ *
+  * Revision 1.19  1997/07/31 10:56:52  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+Index: src/midas/mulaw.c
+===================================================================
+RCS file: /cvs/src/midas/src/midas/mulaw.c,v
+retrieving revision 1.2
+retrieving revision 1.2.2.1
+diff -u -r1.2 -r1.2.2.1
+--- a/src/midas/mulaw.c	31 Jul 1997 10:56:53 -0000	1.2
++++ b/src/midas/mulaw.c	17 Mar 2004 18:58:31 -0000	1.2.2.1
+@@ -2,7 +2,7 @@
+  *
+  * u-law encoding/decoding routines
+  *
+- * $Id: mulaw.c,v 1.2 1997/07/31 10:56:53 pekangas Exp $
++ * $Id: mulaw.c,v 1.2.2.1 2004/03/17 18:58:31 pekangas Exp $
+  *
+  * Copyright 1997 Housemarque Inc.
+  *
+@@ -143,10 +143,13 @@
+ 
+ /*
+  * $Log: mulaw.c,v $
++ * Revision 1.2.2.1  2004/03/17 18:58:31  pekangas
++ * Added a newline to the end of the file to make gcc 3.3.3 happy
++ *
+  * Revision 1.2  1997/07/31 10:56:53  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+  * Revision 1.1  1997/02/20 19:48:22  pekangas
+  * Initial revision
+  *
+-*/
+\ No newline at end of file
++*/
+Index: src/midas/mulaw.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/mulaw.h,v
+retrieving revision 1.2
+retrieving revision 1.2.2.1
+diff -u -r1.2 -r1.2.2.1
+--- a/src/midas/mulaw.h	31 Jul 1997 10:56:53 -0000	1.2
++++ b/src/midas/mulaw.h	17 Mar 2004 18:58:31 -0000	1.2.2.1
+@@ -2,7 +2,7 @@
+  *
+  * u-law encoding/decoding routines
+  *
+- * $Id: mulaw.h,v 1.2 1997/07/31 10:56:53 pekangas Exp $
++ * $Id: mulaw.h,v 1.2.2.1 2004/03/17 18:58:31 pekangas Exp $
+  *
+  * Copyright 1997 Housemarque Inc.
+  *
+@@ -73,10 +73,13 @@
+ 
+ /*
+  * $Log: mulaw.h,v $
++ * Revision 1.2.2.1  2004/03/17 18:58:31  pekangas
++ * Added a newline to the end of the file to make gcc 3.3.3 happy
++ *
+  * Revision 1.2  1997/07/31 10:56:53  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+  * Revision 1.1  1997/02/20 19:48:22  pekangas
+  * Initial revision
+  *
+-*/
+\ No newline at end of file
++*/
+Index: src/midas/vu.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/vu.h,v
+retrieving revision 1.3
+retrieving revision 1.3.2.1
+diff -u -r1.3 -r1.3.2.1
+--- a/src/midas/vu.h	31 Jul 1997 10:56:57 -0000	1.3
++++ b/src/midas/vu.h	17 Mar 2004 18:58:31 -0000	1.3.2.1
+@@ -2,7 +2,7 @@
+  *
+  * Real VU meter routines
+  *
+- * $Id: vu.h,v 1.3 1997/07/31 10:56:57 pekangas Exp $
++ * $Id: vu.h,v 1.3.2.1 2004/03/17 18:58:31 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -143,6 +143,9 @@
+ 
+ /*
+  * $Log: vu.h,v $
++ * Revision 1.3.2.1  2004/03/17 18:58:31  pekangas
++ * Added a newline to the end of the file to make gcc 3.3.3 happy
++ *
+  * Revision 1.3  1997/07/31 10:56:57  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
+@@ -152,4 +155,4 @@
+  * Revision 1.1  1996/05/22 20:49:33  pekangas
+  * Initial revision
+  *
+-*/
+\ No newline at end of file
++*/
+Index: src/midas/xm.h
+===================================================================
+RCS file: /cvs/src/midas/src/midas/xm.h,v
+retrieving revision 1.6
+retrieving revision 1.6.2.1
+diff -u -r1.6 -r1.6.2.1
+--- a/src/midas/xm.h	31 Jul 1997 10:56:58 -0000	1.6
++++ b/src/midas/xm.h	5 Apr 2001 09:15:57 -0000	1.6.2.1
+@@ -2,7 +2,7 @@
+  *
+  * Fasttracker 2 eXtended Module format structures
+  *
+- * $Id: xm.h,v 1.6 1997/07/31 10:56:58 pekangas Exp $
++ * $Id: xm.h,v 1.6.2.1 2001/04/05 09:15:57 pekangas Exp $
+  *
+  * Copyright 1996,1997 Housemarque Inc.
+  *
+@@ -47,23 +47,23 @@
+ 
+ typedef struct
+ {
+-    char        signature[17];          /* "Extended Module: " */
+-    char        name[20];               /* module name */
+-    uchar       num1A;                  /* 0x1A */
+-    char        trackerName[20];        /* tracker name */
+-    U16         version;                /* version number, major-minor */
+-    U32         hdrSize;                /* header size */
+-    U16         songLength;             /* song length */
+-    U16         restart;                /* restart position */
+-    U16         numChans;               /* number of channels */
+-    U16         numPatts;               /* number of patterns */
+-    U16         numInsts;               /* number of instruments */
+-    U16         flags;                  /* header flags, see enum
++    char        signature[17] PACKED;   /* "Extended Module: " */
++    char        name[20] PACKED;        /* module name */
++    uchar       num1A PACKED;           /* 0x1A */
++    char        trackerName[20] PACKED; /* tracker name */
++    U16         version PACKED;         /* version number, major-minor */
++    U32         hdrSize PACKED;         /* header size */
++    U16         songLength PACKED;      /* song length */
++    U16         restart PACKED;         /* restart position */
++    U16         numChans PACKED;        /* number of channels */
++    U16         numPatts PACKED;        /* number of patterns */
++    U16         numInsts PACKED;        /* number of instruments */
++    U16         flags PACKED;           /* header flags, see enum
+                                            xmFlags */
+-    U16         speed;                  /* initial speed */
+-    U16         tempo;                  /* initial tempo */
+-    uchar       orders[256];            /* pattern order table */
+-} xmHeader;
++    U16         speed PACKED;           /* initial speed */
++    U16         tempo PACKED;           /* initial tempo */
++    uchar       orders[256] PACKED;     /* pattern order table */
++} xmHeader PACKED;
+ 
+ 
+ 
+@@ -76,12 +76,12 @@
+ 
+ typedef struct
+ {
+-    U32         headerLength;           /* pattern header length */
+-    U8          packType;               /* packing type (now 0) */
+-    U16         numRows;                /* number of rows */
+-    U16         pattDataSize;           /* pattern data size */
+-    uchar       data[EMPTYARRAY];       /* packed pattern data */
+-} xmPattern;
++    U32         headerLength PACKED;    /* pattern header length */
++    U8          packType PACKED;        /* packing type (now 0) */
++    U16         numRows PACKED;         /* number of rows */
++    U16         pattDataSize PACKED;    /* pattern data size */
++    uchar       data[EMPTYARRAY] PACKED; /* packed pattern data */
++} xmPattern PACKED;
+ 
+ 
+ 
+@@ -94,11 +94,11 @@
+ 
+ typedef struct
+ {
+-    U32         instSize;               /* instrument size */
+-    char        instName[22];           /* instrument filename */
+-    U8          instType;               /* instrument type (now 0) */
+-    U16         numSamples;             /* number of samples in instrument */
+-} xmInstHeader;
++    U32         instSize PACKED;        /* instrument size */
++    char        instName[22] PACKED;    /* instrument filename */
++    U8          instType PACKED;        /* instrument type (now 0) */
++    U16         numSamples PACKED;      /* number of samples in instrument */
++} xmInstHeader PACKED;
+ 
+ 
+ 
+@@ -112,28 +112,28 @@
+ 
+ typedef struct
+ {
+-    U32         headerSize;             /* sample header size */
+-    U8          noteSmpNums[96];        /* sample numbers for notes */
+-    U16         volEnvelope[2*12];      /* volume envelope points */
+-    U16         panEnvelope[2*12];      /* panning envelope points */
+-    U8          numVolPoints;           /* number of volume envelope points */
+-    U8          numPanPoints;           /* number of panning env. points */
+-    U8          volSustain;             /* volume sustain point */
+-    U8          volLoopStart;           /* volume loop start point */
+-    U8          volLoopEnd;             /* volume loop end point */
+-    U8          panSustain;             /* panning sustain point */
+-    U8          panLoopStart;           /* panning loop start point */
+-    U8          panLoopEnd;             /* panning loop end point */
+-    U8          volEnvFlags;            /* volume envelope flags */
+-    U8          panEnvFlags;            /* panning envelope flags */
+-
+-    U8          vibType;                /* vibrato type */
+-    U8          vibSweep;               /* vibrato sweep */
+-    U8          vibDepth;               /* vibrato depth */
+-    U8          vibRate;                /* vibrato rate */
+-    U16         volFadeout;             /* volume fadeout */
+-    U16         reserved;
+-} xmInstSampleHeader;
++    U32         headerSize PACKED;      /* sample header size */
++    U8          noteSmpNums[96] PACKED; /* sample numbers for notes */
++    U16         volEnvelope[2*12] PACKED; /* volume envelope points */
++    U16         panEnvelope[2*12] PACKED; /* panning envelope points */
++    U8          numVolPoints PACKED;    /* number of volume envelope points */
++    U8          numPanPoints PACKED;    /* number of panning env. points */
++    U8          volSustain PACKED;      /* volume sustain point */
++    U8          volLoopStart PACKED;    /* volume loop start point */
++    U8          volLoopEnd PACKED;      /* volume loop end point */
++    U8          panSustain PACKED;      /* panning sustain point */
++    U8          panLoopStart PACKED;    /* panning loop start point */
++    U8          panLoopEnd PACKED;      /* panning loop end point */
++    U8          volEnvFlags PACKED;     /* volume envelope flags */
++    U8          panEnvFlags PACKED;     /* panning envelope flags */
++
++    U8          vibType PACKED;         /* vibrato type */
++    U8          vibSweep PACKED;        /* vibrato sweep */
++    U8          vibDepth PACKED;        /* vibrato depth */
++    U8          vibRate PACKED;         /* vibrato rate */
++    U16         volFadeout PACKED;      /* volume fadeout */
++    U16         reserved PACKED;
++} xmInstSampleHeader PACKED;
+ 
+ 
+ 
+@@ -148,20 +148,20 @@
+ 
+ typedef struct
+ {
+-    U32         smpLength;              /* sample length */
+-    U32         loopStart;              /* loop start */
+-    U32         loopLength;             /* loop length */
+-    U8          volume;                 /* volume */
+-    S8          finetune;               /* finetune */
+-    U8          flags;                  /* sample flags, bits 0-1 are loop
++    U32         smpLength PACKED;       /* sample length */
++    U32         loopStart PACKED;       /* loop start */
++    U32         loopLength PACKED;      /* loop length */
++    U8          volume PACKED;          /* volume */
++    S8          finetune PACKED;        /* finetune */
++    U8          flags PACKED;           /* sample flags, bits 0-1 are loop
+                                            type: 0 = no loop, 1 = unidir,
+                                            2 = bidir loop */
+-    U8          panning;                /* sample panning */
+-    S8          relNote;                /* relative note number */
+-    U8          reserved;
+-    char        smpName[22];            /* sample name */
++    U8          panning PACKED;         /* sample panning */
++    S8          relNote PACKED;         /* relative note number */
++    U8          reserved PACKED;
++    char        smpName[22] PACKED;     /* sample name */
+     /* Sample data follows, in delta format */
+-} xmSampleHeader;
++} xmSampleHeader PACKED;
+ 
+ 
+ 
+@@ -170,6 +170,9 @@
+ 
+ /*
+  * $Log: xm.h,v $
++ * Revision 1.6.2.1  2001/04/05 09:15:57  pekangas
++ * Backported Jarno's GCC structure packing fix from trunk to the 1.1 branch
++ *
+  * Revision 1.6  1997/07/31 10:56:58  pekangas
+  * Renamed from MIDAS Sound System to MIDAS Digital Audio System
+  *
