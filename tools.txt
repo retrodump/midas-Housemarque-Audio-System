@@ -1,0 +1,14 @@
+Tools for compiling Housemarque Audio System
+
+Compiling Housemarque Audio System requires some tools in addition to the basic C compiler. Some of them are included here for your convenience.
+
+MS-DOS
+NASM 0.95
+A suitable version of GNU Make is included in DJGPP.
+O2C for converting TASM produced .OBJs for use with DJGPP.
+Windows NT/95
+NASM 0.95
+GNU Make, also the GNU Make in Cygnus Cygwin toolset should work fine.
+Linux
+NASM 0.95, for LIBC 6 systems
+More information about NASM, including the source code, is available at the NASM homepage. GNU Make information and source code is available at the GNU Make homepage.
